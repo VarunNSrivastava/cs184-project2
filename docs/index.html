@@ -1,0 +1,471 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+<link rel="stylesheet" type="text/css" href="style.css">
+
+<title>CS 184 Mesh Edit</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2018</h1>
+<h1 align="middle">Project 2: Mesh Edit</h1>
+<h2 align="middle">VARUN NEAL SRIVASTAVA</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>
+    For this project, I've implemented 2D and 3D mesh structures. In particular, in the first part, I've implemented
+    Bezier Curves and Surfaces with adjustable vertices. In the second part, I've extended these to give support for
+    area-weighted normals and general mesh loop subdivison. In the context of a 3D modeling
+    software such as Autodesk Maya, these features can be considered akin to "smooth mode" and adding edge loops,
+    respectively.
+
+</p>
+<br>
+
+
+<h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+<h3 align="middle">Part 1: Bezier Curves with 1D de Casteljau Subdivision</h3>
+
+
+<p>
+    Bezier Curves are used to express smooth curves without the need of explicit formula, and rather a set of control points.
+    Two of these control points act as endpoints, while the remaining control points act as
+    "weights". One useful analogy for these intermediary points is as sources of gravity to which the curve is attracted to.
+</p>
+    <br>
+    <!-- 6 point fully evaluated curve  -->
+    <div align="middle">
+        <img src="images/pt1_1.jpeg" align="middle" width="50%">
+    </div>
+    <br>
+<p>
+
+    Another formulation of Bezier Curves is via De Casteljau's algorithm, which expresses each point on the curve in terms
+    of the outcome of repeated linear interpolation across each control point. In particular, each iteration of interpolation
+    calculates the weighted midpoint of the control point (for some weight parameter \(t\)). The midpoints are treated
+    as the next set of control points for the next layer of interpolation. This process is repeated until we only have a single
+    point remaining. As we range \(t\)  from 0 to 1, we can produce every single point on the curve.
+</p>
+
+    <br>
+    <!-- Table of iterations -->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt1_2.jpeg" align="middle" width="400px"/>
+                    <figcaption>Level 0</figcaption>
+                </td>
+                <td>
+                    <img src="images/pt1_3.jpeg" align="middle" width="400px"/>
+                    <figcaption>Level 1</figcaption>
+                </td>
+            </tr>
+            <br>
+            <tr align="center">
+                <td>
+                    <img src="images/pt1_4.jpeg" align="middle" width="400px"/>
+                    <figcaption>Level 2</figcaption>
+                </td>
+                <td>
+                    <img src="images/pt1_5.jpeg" align="middle" width="400px"/>
+                    <figcaption>Level 3</figcaption>
+                </td>
+            </tr>
+            <br>
+            <tr align="center">
+                <td>
+                    <img src="images/pt1_6.jpeg" align="middle" width="400px"/>
+                    <figcaption>Level 4</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <br>
+
+<p>
+    Here is an example of how the curve changes when we move control points slightly.
+</p>
+    <br>
+    <!-- slightly different curve  -->
+    <div align="middle">
+        <img src="images/pt1_7.jpeg" align="middle" width="50%">
+    </div>
+    <br>
+
+
+
+<h3 align="middle">Part 2: Bezier Surfaces with Separable 1D de Casteljau</h3>
+
+<p>
+    We can extend our implementation from 2D to 3D by interpolating over dimensions. In particular, if we have a \(n \times n\) grid
+    of 3D control points, we can reduce this to a \(n \times 1\) vector of control points by applying de Casteljau's algorithm
+    over one of the dimensions. Then we can turn this vector into a single point by another round of the algorithm. Now we can
+    create elaborate 3D meshes:
+</p>
+<br>
+
+
+<br>
+    <div align="middle">
+        <img src="images/pt2_1.jpeg" align="middle" width="50%">
+        <figcaption>Teapot.</figcaption>
+    </div>
+
+<br>
+
+
+<h2 align="middle">Section II: Triangle Meshes and Half-Edge Data Structure</h2>
+
+<h3 align="middle">Part 3: Area-Weighted Vertex Normals</h3>
+
+
+<p>
+    In order to smooth the appearance of the mesh, we use Phong shading to interpolate the color at a given pixel, instead
+    of shading an entire face with the same color. This requires knowing the normal vector at any vertex on the mesh. Since
+    the normal vector of a point is undefined, we instead approximate this value by calculating the weighted average
+    of normals of all adjacent faces to the vertex. In practice, this is very simple since the normal vector of a triangle
+    proportional to its area is given by the cross product of two of its edges.
+</p>
+    <br>
+    <!-- Without phong shading vs with -->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt3_1.jpeg" align="middle" width="400px"/>
+                    <figcaption>Without Phong Shading</figcaption>
+                </td>
+                <td>
+                    <img src="images/pt3_2.jpeg" align="middle" width="400px"/>
+                    <figcaption>With Phong Shading</figcaption>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    <br>
+
+<h3 align="middle">Part 4: Edge Flip</h3>
+<p>
+    The Edge Flip operation swaps which diagonal is splitting a given quadrilateral. In practice, all that needs to be
+    done here is the systematic re-assigning of pointers. We simply keep track of all the vertices, half-edges, edges,
+    and faces in the original quadrilateral, and then reassign them as specified by a edge flip. Solving this for the
+    simplest case (e.g. two triangles joined by a single edge) suffices to solve it in general.
+</p>
+    <br>
+    <!-- Flipping some edges on the teapot -->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt4_1.jpeg" align="middle" width="400px"/>
+                    <figcaption>Before edge flips</figcaption>
+                </td>
+                <td>
+                    <img src="images/pt4_2.jpeg" align="middle" width="400px"/>
+                    <figcaption>After some edge flips</figcaption>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    <br>
+
+<p>
+    The implementation of edge flips was relatively straightforward and we did not encounter much difficulty here.
+</p>
+<br>
+
+
+<h3 align="middle">Part 5: Edge Split</h3>
+
+<p>
+    The Edge Split operation takes an edge corresponding to the diagonal of a quadrilateral and initializes the opposite diagonal.
+    In practice, this is more difficult than edge flipping since several new objects must be initialized. In my implementation,
+    six new half-edges, 3 new edges, 2 new faces, and 1 new vertex are created in a single call the edge split. Keeping track of pointers
+    requires some precision.
+</p>
+<br>
+
+
+    <!-- Edge splits on some mesh-->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt5_1.jpeg" align="middle" width="400px"/>
+                    <figcaption>Before edge splits</figcaption>
+                </td>
+                <td>
+                    <img src="images/pt5_2.jpeg" align="middle" width="400px"/>
+                    <figcaption>After some edge splits</figcaption>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+
+    <!-- Edge splits & flips on some mesh-->
+    <div align="middle">
+        <img src="images/pt5_3.jpeg" align="middle" width="50%">
+        <figcaption>Edge splits <i>and</i> flips on a mesh.</figcaption>
+
+    </div>
+
+
+<p>
+    Implementing edge splits required some debugging. In particular, in our initial implementation, one face would always
+    vanish after performing edge splitting. This problem was caused by the incorrect assignment of one of the faces,
+    which was a problem that took some time to discover.
+</p>
+<br>
+
+
+
+<h3 align="middle">Part 6: Loop Subdivision for Mesh Upsampling</h3>
+<p>
+    Loop subdivision is the technique used to upsample a given mesh; e.g., increase the number of polygons. Loop subdivision
+    essentially just turns each triangle into four, and then slightly adjusts the position of each resultant vertex. This is difficult
+    because of the number of pointers that must be managed when dividing an entire mesh. In practice, this process
+    is equivalent to edge splitting every edge, and then flipping each of the (two) new edges created per split.
+</p>
+<br>
+    <!--Some loop subdivisions // torus?-->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt6_1.jpeg" align="middle" width="200px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_2.jpeg" align="middle" width="200px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_3.jpeg" align="middle" width="200px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_4.jpeg" align="middle" width="200px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_5.jpeg" align="middle" width="200px"/>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    <br>
+<p>
+    In code, this algorithm was implemented in three major steps.
+    <ol>
+        <li>Compute the final positions of each existing vertex in the mesh, as well each of the new vertices that will be created.
+        Store these values in the data structures of the existing vertices and edges, but do not assign them yet.</li>
+        <li>Edge split each vertex. Ensure that we keep track of which edges are new and which are old, for the next step.
+        Additionally, we can now assign the new positions for each of the vertices.</li>
+        <li>Flip each new edge.</li>
+    </ol>
+    In total, this implementation requires two passes through each edge of the original mesh, and one pass through the
+    edges of the upsampled mesh.
+
+</p>
+    <br>
+<p>
+    This \(4-1\) subdivision comes with some consequences. In particular, (1) sharp edges are severely rounded out, and (2) the
+    upsampled mesh is completely dependent on the topology of the mesh rather than its geometry. We can see observe of these
+    effects when upsampling the mesh of a cube:
+</p>
+<br>
+<!--rounded out cube-->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt6_6.jpeg" align="middle" width="400px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_7.jpeg" align="middle" width="400px"/>
+                    <figcaption>Sharp edges are lost</figcaption>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+<br>
+
+
+    <!--asymmetry on cube-->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt6_8.jpeg" align="middle" width="400px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_9.jpeg" align="middle" width="400px"/>
+                    <figcaption>Topology induces asymmetry</figcaption>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    <br>
+<br>
+
+
+
+<p>
+    It turns out, both of these effects can be alleviated by pre-processing. To solve (1), we can add more edge loops
+    around sharp corners in order to encourage them to stay sharp after upsampling:
+</p>
+<br>
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt6_10.jpeg" align="middle" width="400px"/>
+                    <figcaption>Adding some edges near the corner we want to preserve</figcaption>
+
+                </td>
+                <td>
+                    <img src="images/pt6_11.jpeg" align="middle" width="400px"/>
+                    <figcaption>Corner remains sharp</figcaption>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    <br>
+
+<p>
+    On the other hand, in we can fix our asymmetry problem by ensuring that the toplogy of the cube reflects the symmetry
+    we would like to be present in the geometry of the cube. That is, we will create additional edges so that our cube
+    has complete symmetry.
+</p>
+<br>
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt6_12.jpeg" align="middle" width="400px"/>
+                    <figcaption>Making the topology symmetrical</figcaption>
+
+                </td>
+                <td>
+                    <img src="images/pt6_13.jpeg" align="middle" width="400px"/>
+                    <figcaption>Upsampling preserves symmetry</figcaption>
+                </td>
+            </tr>
+
+        </table>
+    </div><br>
+<p>
+    Of course, the implementation of upsampling was not without bugs. One such bug we encounter was mistakenly flipping
+    every single edge on the mesh after splitting, rather than only splitting the desired edges. This created some
+    interesting results!
+</p>
+
+    <br>
+    <!--Buggy-->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt6_mistake.jpeg" align="middle" width="400px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_mistake2.jpeg" align="middle" width="400px"/>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    <br>
+
+    <p>
+       We also chose to implement another subdivsion; in particular, the \(\sqrt{3}\)-algorithm as described in
+        <a href="https://www.graphics.rwth-aachen.de/media/papers/sqrt31.pdf">this paper.</a> This algorithm is
+        fairly simple; we simply insert a new vertex in the exact center of each triangle, and then we "relax" all the
+        surrounding vertices. The formula for relaxing each vertex is a weighted average of the neighboring vertices
+        and the original position and the new midpoints, with a formula provided in the paper. This method has
+        advantages of simpler implementation than the \(4-1\) algorithm, and "usually needs fewer triangles and
+        less effort to achieve the same approximation
+        tolerance." Here is an example of some subdivisions of the bean mesh using this algorithm:
+    </p>
+
+    <br>
+    <!--sqrt3-->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt6_14.jpeg" align="middle" width="400px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_15.jpeg" align="middle" width="400px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_16.jpeg" align="middle" width="400px"/>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    <br>
+    <p>
+        We're not confident our implementation is correct as we have no reference images to compare.
+        In fact, it does appear that our implementation has very obvious flaws, in that it emphasizes all the
+        original triangles in the topology:
+    </p>
+
+    <br>
+    <!--squares-->
+    <div align="middle">
+        <table style="width:100%">
+            <tr align="center">
+                <td>
+                    <img src="images/pt6_17.jpeg" align="middle" width="300px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_18.jpeg" align="middle" width="300px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_19.jpeg" align="middle" width="300px"/>
+                </td>
+                <td>
+                    <img src="images/pt6_20.jpeg" align="middle" width="300px"/>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+    <br>
+
+    <h2>
+
+        This website is available at https://varunnsrivastava.github.io/cs184-project2/.
+    </h2>
+</div>
+</body>
+</html>

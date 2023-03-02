@@ -1,0 +1,30 @@
+/* Define the color palette */
+:root {
+    --primary-color: #fa8072; /* Complimentary color to dark blue */
+    --secondary-color: #f6f6f6;
+    --text-color: #ffffff; /* White text for high contrast with dark blue */
+    --background-color: #1a1a2e; /* Dark blue background color */
+}
+
+/* Apply the color palette to the body */
+body {
+    background-color: var(--background-color);
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: var(--text-color);
+}
+
+/* Apply the color palette to headings */
+h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+    color: var(--primary-color);
+}
+
+/* Apply the color palette to keyboard input */
+kbd {
+    color: var(--text-color);
+}
